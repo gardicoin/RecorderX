@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardAppSelectorDialog"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="14dp"
+    app:strokeWidth="2dp"
+    app:strokeColor="@color/accent_lavender"
+    app:cardBackgroundColor="@color/bg_main"
+    app:cardElevation="8dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- Title Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="6dp">
+
+            <TextView
+                android:id="@+id/dialogAppSelectorTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/target_audio_dialog_title"
+                android:fontFamily="sans-serif-black"
+                android:textColor="@color/accent_lavender"
+                android:textSize="16sp"
+                android:letterSpacing="0.08" />
+
+            <ImageView
+                android:id="@+id/btnCloseDialog"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:padding="4dp"
+                android:src="@drawable/ic_clear"
+                app:tint="@color/text_secondary"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="@string/btn_close" />
+        </LinearLayout>
+
+        <!-- Description -->
+        <TextView
+            android:id="@+id/dialogAppSelectorDesc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/target_audio_dialog_desc"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:lineSpacingExtra="2dp"
+            android:layout_marginBottom="14dp" />
+
+        <!-- Search Box -->
+        <LinearLayout
+            android:id="@+id/searchContainer"
+            android:layout_width="match_parent"
+            android:layout_height="42dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/bg_version_pill"
+            android:paddingHorizontal="12dp"
+            android:layout_marginBottom="10dp">
+
+            <ImageView
+                android:id="@+id/ivSearchIcon"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_search"
+                app:tint="@color/text_secondary"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="@null" />
+
+            <EditText
+                android:id="@+id/etAppSearch"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:hint="@string/target_audio_search_hint"
+                android:textColorHint="@color/text_secondary"
+                android:textColor="@color/text_primary"
+                android:textSize="13sp"
+                android:background="@null"
+                android:inputType="text"
+                android:imeOptions="actionDone"
+                android:singleLine="true" />
+
+            <ImageView
+                android:id="@+id/ivClearSearch"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:padding="2dp"
+                android:src="@drawable/ic_clear"
+                app:tint="@color/text_secondary"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:visibility="gone"
+                android:contentDescription="@null" />
+        </LinearLayout>
+
+        <!-- Filter Row (User apps only toggle) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="10dp">
+
+            <com.google.android.material.checkbox.MaterialCheckBox
+                android:id="@+id/cbNonSystemOnly"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/target_audio_user_apps_only"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                android:checked="true"
+                app:buttonTint="@color/accent_lavender" />
+        </LinearLayout>
+
+        <!-- Content Container (RecyclerView + Loading + Empty) -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="320dp"
+            android:layout_marginBottom="14dp">
+
+            <ProgressBar
+                android:id="@+id/pbLoadingApps"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center"
+                android:indeterminateTint="@color/accent_lavender" />
+
+            <TextView
+                android:id="@+id/tvEmptyApps"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="@string/target_audio_no_apps"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp"
+                android:visibility="gone" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvAppList"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scrollbars="vertical"
+                android:clipToPadding="false"
+                android:overScrollMode="never" />
+        </FrameLayout>
+
+        <!-- Bottom Action Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCancelAppSelector"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="@string/btn_close"
+            android:textColor="@color/black"
+            android:textSize="13sp"
+            android:fontFamily="sans-serif-black"
+            android:letterSpacing="0.05"
+            app:backgroundTint="@color/accent_lavender"
+            app:cornerRadius="6dp"
+            android:elevation="0dp" />
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

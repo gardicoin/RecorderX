@@ -17,6 +17,9 @@ public class SettingsManager {
     private static final String KEY_AUDIO_QUALITY = "audio_quality";
     private static final String KEY_NAMING_TEMPLATE = "naming_template";
     private static final String KEY_ORIENTATION = "orientation";
+    private static final String KEY_TARGET_AUDIO_UID = "target_audio_uid";
+    private static final String KEY_TARGET_AUDIO_PACKAGE = "target_audio_package";
+    private static final String KEY_TARGET_AUDIO_APP_NAME = "target_audio_app_name";
 
     private final SharedPreferences prefs;
     private final Context context;
@@ -55,6 +58,58 @@ public class SettingsManager {
 
     public void setCameraOverlayEnabled(boolean enabled) { prefs.edit().putBoolean("camera_overlay_enabled", enabled).apply(); }
     public boolean isCameraOverlayEnabled() { return prefs.getBoolean("camera_overlay_enabled", false); }
+
+    public void setTargetAudioApp(int uid, String packageName, String appName) {
+        prefs.edit()
+            .putInt(KEY_TARGET_AUDIO_UID, uid)
+            .putString(KEY_TARGET_AUDIO_PACKAGE, packageName != null ? packageName : "")
+            .putString(KEY_TARGET_AUDIO_APP_NAME, appName != null ? appName : "")
+            .apply();
+    }
+
+    public void clearTargetAudioApp() {
+        prefs.edit()
+            .putInt(KEY_TARGET_AUDIO_UID, -1)
+            .putString(KEY_TARGET_AUDIO_PACKAGE, "")
+            .putString(KEY_TARGET_AUDIO_APP_NAME, "")
+            .apply();
+    }
+
+    public int getTargetAudioUid() {
+        return prefs.getInt(KEY_TARGET_AUDIO_UID, -1);
+    }
+
+    public String getTargetAudioPackage() {
+        return prefs.getString(KEY_TARGET_AUDIO_PACKAGE, "");
+    }
+
+    public String getTargetAudioAppName() {
+        return prefs.getString(KEY_TARGET_AUDIO_APP_NAME, "");
+    }
+
+    public boolean isTargetAudioAppSelected() {
+        return getTargetAudioUid() != -1 && !getTargetAudioPackage().isEmpty();
+    }
+
+    public boolean validateTargetAudioApp() {
+        int uid = getTargetAudioUid();
+        String pkg = getTargetAudioPackage();
+        if (uid == -1 || pkg == null || pkg.isEmpty()) {
+            return false;
+        }
+        try {
+            android.content.pm.ApplicationInfo info = context.getPackageManager().getApplicationInfo(pkg, 0);
+            if (info.uid != uid) {
+                // UID changed (app update/reinstall), update stored UID
+                setTargetAudioApp(info.uid, pkg, getTargetAudioAppName());
+            }
+            return true;
+        } catch (android.content.pm.PackageManager.NameNotFoundException e) {
+            // App was removed, clear preference
+            clearTargetAudioApp();
+            return false;
+        }
+    }
 
     public void setNamingTemplate(String template) { prefs.edit().putString(KEY_NAMING_TEMPLATE, template).apply(); }
     

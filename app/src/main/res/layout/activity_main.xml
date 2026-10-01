@@ -383,12 +383,147 @@
             <!-- Audio Quality -->
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/audio_quality_label" android:textSize="12sp" android:textColor="@color/text_primary" android:textStyle="bold" android:layout_marginBottom="8dp"/>
             <com.google.android.material.slider.Slider android:id="@+id/audioQualitySlider" android:layout_width="match_parent" android:layout_height="wrap_content" android:valueFrom="0" android:valueTo="2" android:stepSize="1" app:trackHeight="32dp" app:thumbRadius="10dp" app:thumbColor="@color/text_primary" app:trackColorActive="@color/accent_lavender" app:trackColorInactive="@color/slider_track_inactive" android:layout_marginBottom="4dp"/>
-            <androidx.constraintlayout.widget.ConstraintLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingHorizontal="16dp" android:layout_marginBottom="48dp">
+            <androidx.constraintlayout.widget.ConstraintLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingHorizontal="16dp" android:layout_marginBottom="32dp">
                 <TextView android:id="@+id/q1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="LOW" android:textColor="@color/text_primary" android:textSize="9sp" android:fontFamily="sans-serif-black"/>
                 <TextView android:id="@+id/q2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="MID" android:textColor="@color/text_primary" android:textSize="9sp" android:fontFamily="sans-serif-black"/>
                 <TextView android:id="@+id/q3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="MAX" android:textColor="@color/text_primary" android:textSize="9sp" android:fontFamily="sans-serif-black"/>
                 <androidx.constraintlayout.helper.widget.Flow android:layout_width="match_parent" android:layout_height="wrap_content" app:constraint_referenced_ids="q1,q2,q3" app:flow_horizontalStyle="spread_inside" app:layout_constraintTop_toTopOf="parent"/>
             </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!-- Selective Single-App Audio Capture Card -->
+            <TextView
+                android:id="@+id/headerSelectiveAudio"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/target_audio_section_title"
+                android:fontFamily="sans-serif-black"
+                android:textSize="11sp"
+                android:textColor="@color/accent_lavender"
+                android:letterSpacing="0.1"
+                android:layout_marginBottom="4dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/target_audio_section_desc"
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp"
+                android:layout_marginBottom="12dp"/>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardTargetAudioApp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="10dp"
+                app:strokeWidth="1.5dp"
+                app:strokeColor="@color/accent_lavender"
+                app:cardBackgroundColor="@color/bg_main"
+                app:cardElevation="0dp"
+                android:layout_marginBottom="40dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <ImageView
+                            android:id="@+id/ivTargetAppIcon"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:src="@drawable/ic_speaker"
+                            app:tint="@color/accent_lavender"
+                            android:scaleType="fitCenter"
+                            android:layout_marginEnd="14dp"
+                            android:contentDescription="@null" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/tvTargetAppName"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/target_audio_system_default"
+                                android:textSize="13sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/text_primary"
+                                android:singleLine="true"
+                                android:ellipsize="end" />
+
+                            <TextView
+                                android:id="@+id/tvTargetAppPackage"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/target_audio_no_filter_desc"
+                                android:textSize="11sp"
+                                android:fontFamily="monospace"
+                                android:textColor="@color/text_secondary"
+                                android:layout_marginTop="2dp"
+                                android:singleLine="true"
+                                android:ellipsize="end" />
+
+                            <TextView
+                                android:id="@+id/tvTargetAppUid"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:background="@drawable/bg_uid_badge"
+                                android:fontFamily="monospace"
+                                android:textSize="10sp"
+                                android:textColor="@color/accent_lavender"
+                                android:visibility="gone" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="14dp">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnSelectTargetApp"
+                            style="@style/Widget.MaterialComponents.Button"
+                            android:layout_width="0dp"
+                            android:layout_height="40dp"
+                            android:layout_weight="1"
+                            android:text="@string/target_audio_select_btn"
+                            android:textColor="@color/black"
+                            android:textSize="11sp"
+                            android:fontFamily="sans-serif-black"
+                            android:letterSpacing="0.05"
+                            app:backgroundTint="@color/accent_lavender"
+                            app:cornerRadius="6dp"
+                            android:elevation="0dp"
+                            android:layout_marginEnd="8dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnClearTargetApp"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:text="@string/target_audio_clear_btn"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="11sp"
+                            android:fontFamily="sans-serif-black"
+                            android:letterSpacing="0.05"
+                            app:strokeColor="@color/text_secondary"
+                            app:strokeWidth="1dp"
+                            app:cornerRadius="6dp"
+                            android:visibility="gone" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- Custom Naming -->
 

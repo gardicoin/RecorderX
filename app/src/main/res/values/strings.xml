@@ -219,4 +219,27 @@
     <string name="whats_new_fixes_title">Minor Bug Fixes</string>
     <string name="whats_new_fixes_desc">Isolated screen capture dialog, synchronized live camera status, and stability improvements.</string>
     <string name="whats_new_btn">GOT IT</string>
+
+    <!-- Selective Single-App Audio Capture -->
+    <string name="target_audio_section_title">SELECTIVE AUDIO CAPTURE</string>
+    <string name="target_audio_section_desc">Capture internal audio exclusively from a selected application (App 1) while recording video from the display/foreground app (App 2).</string>
+    <string name="target_audio_system_default">All System Audio</string>
+    <string name="target_audio_no_filter_desc">No UID restriction. Captures playback from all apps.</string>
+    <string name="target_audio_filtered_desc">Audio capture isolated to this application (UID: %1$d).</string>
+    <string name="target_audio_select_btn">SELECT APP</string>
+    <string name="target_audio_change_btn">CHANGE</string>
+    <string name="target_audio_clear_btn">CLEAR</string>
+    <string name="target_audio_dialog_title">SELECT AUDIO APP</string>
+    <string name="target_audio_dialog_desc">Select the application you want to record internal audio from. Screen recording will still capture whatever is on your display.</string>
+    <string name="target_audio_search_hint">Search apps by name or package...</string>
+    <string name="target_audio_user_apps_only">User apps only</string>
+    <string name="target_audio_scanning">Scanning installed apps...</string>
+    <string name="target_audio_no_apps">No matching apps found</string>
+    <string name="target_audio_all_apps_option">All System Audio (Entire System)</string>
+    <string name="target_audio_all_apps_sub">No UID filter — captures audio output from all apps</string>
+    <string name="target_audio_uid_format">UID: %1$d</string>
+    <string name="target_audio_switched_toast">Audio source set to SYS for selective app capture</string>
+    <string name="target_audio_cleared_toast">Reset to full system audio recording</string>
+    <string name="target_audio_selected_toast">Audio locked to %1$s (UID: %2$d)</string>
+    <string name="btn_close">CLOSE</string>
 </resources>

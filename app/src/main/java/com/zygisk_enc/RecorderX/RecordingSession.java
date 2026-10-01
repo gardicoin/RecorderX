@@ -64,6 +64,8 @@ public class RecordingSession {
     private final AtomicBoolean released = new AtomicBoolean(false);
     private long pauseStartTimeUs = -1;
     private long totalPauseDurationUs = 0;
+    private long lastVideoPtsUs = -1;
+    private long lastAudioPtsUs = -1;
     
     private Thread audioThread;
     private Thread videoThread;
@@ -424,20 +426,85 @@ public class RecordingSession {
         int bufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat) * 4;
 
         if (settings.getAudioSource() == 2 || settings.getAudioSource() == 3) {
-            AudioPlaybackCaptureConfiguration config = new AudioPlaybackCaptureConfiguration.Builder(mediaProjection)
-                    .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
-                    .addMatchingUsage(AudioAttributes.USAGE_GAME)
-                    .addMatchingUsage(AudioAttributes.USAGE_UNKNOWN)
-                    .build();
-            audioRecord = new AudioRecord.Builder()
-                    .setAudioPlaybackCaptureConfig(config)
-                    .setAudioFormat(new AudioFormat.Builder()
-                            .setEncoding(audioFormat)
-                            .setSampleRate(sampleRate)
-                            .setChannelMask(channelConfig)
-                            .build())
-                    .setBufferSizeInBytes(bufferSize)
-                    .build();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                AudioPlaybackCaptureConfiguration.Builder captureBuilder =
+                        new AudioPlaybackCaptureConfiguration.Builder(mediaProjection)
+                                .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
+                                .addMatchingUsage(AudioAttributes.USAGE_GAME)
+                                .addMatchingUsage(AudioAttributes.USAGE_UNKNOWN);
+
+                int targetUid = settings.getTargetAudioUid();
+                boolean uidApplied = false;
+                if (targetUid != -1 && settings.validateTargetAudioApp()) {
+                    try {
+                        captureBuilder.addMatchingUid(targetUid);
+                        uidApplied = true;
+                        Log.i(TAG, "AudioPlaybackCapture restricted exclusively to UID: " + targetUid + " (" + settings.getTargetAudioPackage() + ")");
+                    } catch (Exception e) {
+                        Log.w(TAG, "Failed to apply matching UID " + targetUid + ", falling back to full system audio", e);
+                    }
+                } else {
+                    Log.i(TAG, "Capturing full system audio playback (no UID restriction applied)");
+                }
+
+                AudioPlaybackCaptureConfiguration config = captureBuilder.build();
+                try {
+                    audioRecord = new AudioRecord.Builder()
+                            .setAudioPlaybackCaptureConfig(config)
+                            .setAudioFormat(new AudioFormat.Builder()
+                                    .setEncoding(audioFormat)
+                                    .setSampleRate(sampleRate)
+                                    .setChannelMask(channelConfig)
+                                    .build())
+                            .setBufferSizeInBytes(bufferSize)
+                            .build();
+
+                    if (audioRecord.getState() != AudioRecord.STATE_INITIALIZED && uidApplied) {
+                        Log.w(TAG, "Selective AudioRecord state not initialized with UID. Retrying full system audio fallback...");
+                        try { audioRecord.release(); } catch (Exception ignored) {}
+                        audioRecord = null;
+                        AudioPlaybackCaptureConfiguration fallbackConfig =
+                                new AudioPlaybackCaptureConfiguration.Builder(mediaProjection)
+                                        .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
+                                        .addMatchingUsage(AudioAttributes.USAGE_GAME)
+                                        .addMatchingUsage(AudioAttributes.USAGE_UNKNOWN)
+                                        .build();
+                        audioRecord = new AudioRecord.Builder()
+                                .setAudioPlaybackCaptureConfig(fallbackConfig)
+                                .setAudioFormat(new AudioFormat.Builder()
+                                        .setEncoding(audioFormat)
+                                        .setSampleRate(sampleRate)
+                                        .setChannelMask(channelConfig)
+                                        .build())
+                                .setBufferSizeInBytes(bufferSize)
+                                .build();
+                    }
+                } catch (Exception e) {
+                    if (uidApplied) {
+                        Log.w(TAG, "AudioRecord init failed with UID restriction. Retrying full system audio fallback...", e);
+                        AudioPlaybackCaptureConfiguration fallbackConfig =
+                                new AudioPlaybackCaptureConfiguration.Builder(mediaProjection)
+                                        .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
+                                        .addMatchingUsage(AudioAttributes.USAGE_GAME)
+                                        .addMatchingUsage(AudioAttributes.USAGE_UNKNOWN)
+                                        .build();
+                        audioRecord = new AudioRecord.Builder()
+                                .setAudioPlaybackCaptureConfig(fallbackConfig)
+                                .setAudioFormat(new AudioFormat.Builder()
+                                        .setEncoding(audioFormat)
+                                        .setSampleRate(sampleRate)
+                                        .setChannelMask(channelConfig)
+                                        .build())
+                                .setBufferSizeInBytes(bufferSize)
+                                .build();
+                    } else {
+                        throw e;
+                    }
+                }
+            } else {
+                Log.w(TAG, "AudioPlaybackCapture not supported on Android < 10. Falling back to MIC.");
+                audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, sampleRate, channelConfig, audioFormat, bufferSize);
+            }
                     
             boolean defaultMute = (settings.getAudioSource() == 2);
             isMicMuted.set(defaultMute);
@@ -476,6 +543,21 @@ public class RecordingSession {
         }, 2500);
         
         if (audioEncoder != null) {
+            try {
+                int initIndex = audioEncoder.dequeueInputBuffer(20000);
+                if (initIndex >= 0) {
+                    ByteBuffer inBuf = audioEncoder.getInputBuffer(initIndex);
+                    if (inBuf != null) {
+                        inBuf.clear();
+                        byte[] silence = new byte[Math.min(1024, inBuf.remaining())];
+                        inBuf.put(silence);
+                        audioEncoder.queueInputBuffer(initIndex, 0, silence.length, 0, 0);
+                    }
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Audio encoder priming buffer: " + e.getMessage());
+            }
+
             audioThread = new Thread(() -> {
                 try {
                     if (audioEncoder != null && audioRecord != null) {
@@ -552,6 +634,10 @@ public class RecordingSession {
                         if (isVideo) {
                             if (videoStartTimeUs == -1) videoStartTimeUs = bufferInfo.presentationTimeUs;
                             bufferInfo.presentationTimeUs -= (videoStartTimeUs + totalPauseDurationUs);
+                            if (bufferInfo.presentationTimeUs <= lastVideoPtsUs) {
+                                bufferInfo.presentationTimeUs = lastVideoPtsUs + 1000L;
+                            }
+                            lastVideoPtsUs = bufferInfo.presentationTimeUs;
                         }
 
                         if (bufferInfo.presentationTimeUs < 0) bufferInfo.presentationTimeUs = 0;
@@ -617,6 +703,24 @@ public class RecordingSession {
                         } catch (Exception e) {
                             Log.w(TAG, "Error reading from secondary audio record", e);
                         }
+                    }
+                }
+
+                if (read <= 0 && readSec <= 0) {
+                    try { Thread.sleep(20); } catch (InterruptedException ignored) {}
+                    if (!isRecording.get()) break;
+                    // Maintain real-time audio sync with screen recording even if target app is silent
+                    long currentUs = (System.currentTimeMillis() - sessionStartTimeMs - totalPauseDurationMs) * 1000L;
+                    long currentAudioPts = (totalSamples * 1000000L) / sampleRate;
+                    if (currentUs > currentAudioPts + 100000L) {
+                        int silenceBytes = Math.min(bufferSize, 2048);
+                        pcmBuffer.clear();
+                        pcmBuffer.put(primaryBytes, 0, silenceBytes);
+                        pcmBuffer.position(0);
+                        read = silenceBytes;
+                    } else {
+                        drainAudioOutput();
+                        continue;
                     }
                 }
 
@@ -690,7 +794,10 @@ public class RecordingSession {
             } else {
                 ByteBuffer outputBuffer = audioEncoder.getOutputBuffer(outputIndex);
                 if (muxerStarted && bufferInfo.size > 0 && audioTrackIndex != -1) {
-                    // Audio PTS is already normalized (starts at 0) from drainAudio()
+                    if (bufferInfo.presentationTimeUs <= lastAudioPtsUs) {
+                        bufferInfo.presentationTimeUs = lastAudioPtsUs + 1000L;
+                    }
+                    lastAudioPtsUs = bufferInfo.presentationTimeUs;
                     muxer.writeSampleData(audioTrackIndex, outputBuffer, bufferInfo);
                 }
                 audioEncoder.releaseOutputBuffer(outputIndex, false);

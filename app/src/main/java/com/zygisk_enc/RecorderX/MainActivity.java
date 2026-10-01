@@ -699,6 +699,122 @@ public class MainActivity extends AppCompatActivity {
 
         // Clickable copy helper for {timestamp}
         setupNamingTemplateHelper();
+
+        // Setup Selective Audio Target App UI
+        setupTargetAudioAppUI();
+    }
+
+    private void setupTargetAudioAppUI() {
+        com.google.android.material.button.MaterialButton btnSelect = findViewById(R.id.btnSelectTargetApp);
+        if (btnSelect != null) {
+            btnSelect.setOnClickListener(v -> showAppSelectorDialog());
+        }
+
+        com.google.android.material.button.MaterialButton btnClear = findViewById(R.id.btnClearTargetApp);
+        if (btnClear != null) {
+            btnClear.setOnClickListener(v -> {
+                settingsManager.clearTargetAudioApp();
+                updateTargetAudioAppUI();
+                Toast.makeText(this, R.string.target_audio_cleared_toast, Toast.LENGTH_SHORT).show();
+            });
+        }
+
+        updateTargetAudioAppUI();
+    }
+
+    private void updateTargetAudioAppUI() {
+        android.widget.ImageView ivIcon = findViewById(R.id.ivTargetAppIcon);
+        android.widget.TextView tvName = findViewById(R.id.tvTargetAppName);
+        android.widget.TextView tvPackage = findViewById(R.id.tvTargetAppPackage);
+        android.widget.TextView tvUid = findViewById(R.id.tvTargetAppUid);
+        com.google.android.material.button.MaterialButton btnSelect = findViewById(R.id.btnSelectTargetApp);
+        com.google.android.material.button.MaterialButton btnClear = findViewById(R.id.btnClearTargetApp);
+
+        if (tvName == null) return;
+
+        int accentColor = getActiveAccentColor();
+
+        if (settingsManager.isTargetAudioAppSelected() && settingsManager.validateTargetAudioApp()) {
+            String appName = settingsManager.getTargetAudioAppName();
+            String pkg = settingsManager.getTargetAudioPackage();
+            int uid = settingsManager.getTargetAudioUid();
+
+            tvName.setText(appName != null && !appName.isEmpty() ? appName : pkg);
+            if (tvPackage != null) {
+                tvPackage.setText(getString(R.string.target_audio_filtered_desc, uid));
+            }
+            if (tvUid != null) {
+                tvUid.setVisibility(android.view.View.VISIBLE);
+                tvUid.setText(getString(R.string.target_audio_uid_format, uid));
+                tvUid.setTextColor(accentColor);
+            }
+            if (ivIcon != null) {
+                try {
+                    android.graphics.drawable.Drawable icon = getPackageManager().getApplicationIcon(pkg);
+                    ivIcon.setImageDrawable(icon);
+                    ivIcon.setImageTintList(null);
+                } catch (Exception e) {
+                    ivIcon.setImageResource(android.R.drawable.sym_def_app_icon);
+                    ivIcon.setImageTintList(null);
+                }
+            }
+            if (btnSelect != null) {
+                btnSelect.setText(R.string.target_audio_change_btn);
+            }
+            if (btnClear != null) {
+                btnClear.setVisibility(android.view.View.VISIBLE);
+            }
+        } else {
+            tvName.setText(R.string.target_audio_system_default);
+            if (tvPackage != null) {
+                tvPackage.setText(R.string.target_audio_no_filter_desc);
+            }
+            if (tvUid != null) {
+                tvUid.setVisibility(android.view.View.GONE);
+            }
+            if (ivIcon != null) {
+                ivIcon.setImageResource(R.drawable.ic_speaker);
+                ivIcon.setImageTintList(android.content.res.ColorStateList.valueOf(accentColor));
+            }
+            if (btnSelect != null) {
+                btnSelect.setText(R.string.target_audio_select_btn);
+            }
+            if (btnClear != null) {
+                btnClear.setVisibility(android.view.View.GONE);
+            }
+        }
+    }
+
+    private void showAppSelectorDialog() {
+        AppSelectorDialog dialog = new AppSelectorDialog(
+                this,
+                settingsManager.getTargetAudioUid(),
+                getActiveAccentColor(),
+                app -> {
+                    if (app.isAllAppsOption()) {
+                        settingsManager.clearTargetAudioApp();
+                        updateTargetAudioAppUI();
+                        Toast.makeText(this, R.string.target_audio_cleared_toast, Toast.LENGTH_SHORT).show();
+                    } else {
+                        settingsManager.setTargetAudioApp(app.getUid(), app.getPackageName(), app.getAppName());
+                        updateTargetAudioAppUI();
+
+                        // Automatically ensure internal audio is enabled if it was OFF or MIC only
+                        if (settingsManager.getAudioSource() == 0 || settingsManager.getAudioSource() == 1) {
+                            settingsManager.setAudioSource(2); // SYS
+                            com.google.android.material.slider.Slider audioSlider = findViewById(R.id.audioSlider);
+                            if (audioSlider != null) {
+                                audioSlider.setValue(2);
+                            }
+                            ControlCenterWidgetProvider.updateAllWidgets(this);
+                            Toast.makeText(this, R.string.target_audio_switched_toast, Toast.LENGTH_LONG).show();
+                        } else {
+                            Toast.makeText(this, getString(R.string.target_audio_selected_toast, app.getAppName(), app.getUid()), Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                }
+        );
+        dialog.show();
     }
 
     private void setupSlider(int viewId, int arrayId, int initialSelection, OnSelectionChanged listener) {
@@ -856,6 +972,7 @@ public class MainActivity extends AppCompatActivity {
 
         QuickRecordWidgetProvider.updateAllWidgets(this);
         ControlCenterWidgetProvider.updateAllWidgets(this);
+        updateTargetAudioAppUI();
     }
 
     private void applyAccentColor(int color) {
@@ -881,6 +998,16 @@ public class MainActivity extends AppCompatActivity {
         if (headerVideo != null) headerVideo.setTextColor(color);
         android.widget.TextView headerAudio = findViewById(R.id.headerAudioSubsystem);
         if (headerAudio != null) headerAudio.setTextColor(color);
+        android.widget.TextView headerSelective = findViewById(R.id.headerSelectiveAudio);
+        if (headerSelective != null) headerSelective.setTextColor(color);
+
+        com.google.android.material.card.MaterialCardView cardTarget = findViewById(R.id.cardTargetAudioApp);
+        if (cardTarget != null) cardTarget.setStrokeColor(android.content.res.ColorStateList.valueOf(color));
+
+        com.google.android.material.button.MaterialButton btnSelectApp = findViewById(R.id.btnSelectTargetApp);
+        if (btnSelectApp != null) btnSelectApp.setBackgroundTintList(android.content.res.ColorStateList.valueOf(color));
+
+        updateTargetAudioAppUI();
         
         // 3. Button
         if (btnRecord != null) {
